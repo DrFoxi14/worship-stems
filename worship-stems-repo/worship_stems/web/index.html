@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worship Stems</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171c22; --panel-2:#1e242c; --line:#2a323c;
+    --text:#e7ecf2; --muted:#93a0b0; --accent:#e0a95a; --accent-2:#5b8fc9;
+    --ok:#4f9e7a; --warn:#d08a4a; --err:#d0605a; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+       background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+  header{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+  header .badge{font-size:12px;color:var(--muted);background:var(--panel-2);padding:4px 10px;border-radius:99px;border:1px solid var(--line)}
+  main{max-width:1080px;margin:0 auto;padding:28px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:20px}
+  .card h2{margin:0 0 4px;font-size:16px;font-weight:600}
+  .card p.sub{margin:0 0 18px;color:var(--muted);font-size:13.5px}
+  .hidden{display:none !important}
+
+  #drop{border:2px dashed var(--line);border-radius:var(--radius);padding:52px 24px;text-align:center;
+        cursor:pointer;transition:.15s;background:var(--panel)}
+  #drop:hover,#drop.over{border-color:var(--accent);background:var(--panel-2)}
+  #drop .big{font-size:17px;font-weight:600;margin-bottom:6px}
+  #drop .small{color:var(--muted);font-size:13.5px}
+
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .stat .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .stat .v{font-size:20px;font-weight:600;margin-top:2px}
+
+  button{font:inherit;border:1px solid var(--line);background:var(--panel-2);color:var(--text);
+         padding:9px 16px;border-radius:9px;cursor:pointer;transition:.12s}
+  button:hover{background:#26303a;border-color:#3a4552}
+  button.primary{background:var(--accent);color:#1a1207;border-color:transparent;font-weight:600}
+  button.primary:hover{background:#eab86c}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.small{padding:5px 10px;font-size:13px;border-radius:7px}
+
+  label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+  select,input[type=number],input[type=text]{font:inherit;background:var(--panel-2);color:var(--text);
+        border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .check{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--text);cursor:pointer;padding:5px 0}
+  .check input{width:16px;height:16px;accent-color:var(--accent)}
+
+  /* timeline */
+  #timeline{position:relative;height:74px;background:var(--panel-2);border:1px solid var(--line);
+            border-radius:10px;overflow:hidden;margin:16px 0 10px;cursor:pointer}
+  .seg{position:absolute;top:0;bottom:0;border-right:1px solid rgba(0,0,0,.45);
+       display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+       color:#0d1014;overflow:hidden;white-space:nowrap;padding:0 4px;transition:.12s}
+  .seg.sel{outline:2px solid #fff;outline-offset:-2px;z-index:3}
+  #playhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;pointer-events:none;z-index:4;box-shadow:0 0 6px rgba(255,255,255,.6)}
+  .ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px;margin-bottom:14px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  tr.sel td{background:var(--panel-2)}
+  td.num{font-variant-numeric:tabular-nums;color:var(--muted)}
+
+  .bar{height:8px;background:var(--panel-2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .25s}
+  .log{font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);
+       max-height:150px;overflow:auto;margin-top:12px;white-space:pre-wrap}
+
+  .note{border-left:3px solid var(--warn);background:rgba(208,138,74,.08);padding:10px 14px;
+        border-radius:0 8px 8px 0;font-size:13.5px;margin-top:12px}
+  .note.err{border-color:var(--err);background:rgba(208,96,90,.08)}
+  .note.ok{border-color:var(--ok);background:rgba(79,158,122,.08)}
+  audio{width:100%;height:34px;margin-top:10px}
+  .stemrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .stemrow .name{flex:1;font-weight:500}
+  .stemrow .meta{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+  .swatch{width:10px;height:26px;border-radius:3px;flex:none}
+  details summary{cursor:pointer;color:var(--muted);font-size:13.5px;padding:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Worship Stems</h1>
+  <span class="badge" id="deviceBadge">…</span>
+  <span class="badge" id="modelBadge"></span>
+  <span class="badge" id="guideBadge"></span>
+</header>
+
+<main>
+  <!-- STEP 1 -->
+  <section class="card" id="step-upload">
+    <h2>1. Alege piesa</h2>
+    <p class="sub">MP3, WAV, FLAC sau M4A. Totul rulează local — nimic nu pleacă de pe calculator.</p>
+    <div id="drop">
+      <div class="big">Trage fișierul aici</div>
+      <div class="small">sau dă click pentru a alege</div>
+      <input type="file" id="file" accept="audio/*" multiple class="hidden">
+    </div>
+    <div class="log" id="uploadLog"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card hidden" id="step-review">
+    <h2>2. Verifică structura</h2>
+    <p class="sub">Aplicația propune secțiunile. Ascultă și corectează ce nu e bine — de asta depinde track-ul Guide.</p>
+
+    <div class="grid" id="stats"></div>
+
+    <audio id="player" controls preload="metadata"></audio>
+    <div id="timeline"><div id="playhead" style="left:0"></div></div>
+    <div class="ticks"><span id="tick0">0:00</span><span id="tick1"></span><span id="tick2"></span></div>
+
+    <div class="row" style="margin-bottom:16px;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px">
+      <strong style="font-size:13.5px">Tempo</strong>
+      <label class="check" style="padding:0"><input type="radio" name="tempoMode" value="detected" checked> Urmărește înregistrarea</label>
+      <label class="check" style="padding:0"><input type="radio" name="tempoMode" value="fixed"> Fix la</label>
+      <input type="number" id="optBpm" step="0.1" min="30" max="260" style="width:92px">
+      <span style="color:var(--muted);font-size:13px">BPM</span>
+      <button class="small" id="btnHalf">÷2</button>
+      <button class="small" id="btnDouble">×2</button>
+      <button class="small" id="btnResetBpm">Detectat</button>
+      <span style="color:var(--muted);font-size:12.5px" id="bpmHint"></span>
+    </div>
+
+    <div class="row" style="margin-bottom:14px">
+      <button class="small" id="btnPlaySel">▶ Ascultă secțiunea</button>
+      <button class="small" id="btnSplit">Taie aici</button>
+      <button class="small" id="btnDelete">Șterge secțiunea</button>
+      <button class="small" id="btnSnapBack">← 1 bar</button>
+      <button class="small" id="btnSnapFwd">1 bar →</button>
+    </div>
+
+    <table id="sections"><thead><tr>
+      <th style="width:46px">#</th><th>Secțiune</th><th style="width:110px">Început</th>
+      <th style="width:90px">Durată</th><th style="width:70px">Bari</th>
+    </tr></thead><tbody></tbody></table>
+
+    <details style="margin-top:18px">
+      <summary>Setări avansate</summary>
+      <div class="grid" style="margin-top:14px">
+        <label class="field">Calitate
+          <select id="optQuality">
+            <option value="maximum" selected>Maxim (ensemble + drumsep) — lent</option>
+            <option value="standard">Standard — echilibrat</option>
+            <option value="fast">Rapid — un singur model</option>
+          </select>
+        </label>
+        <label class="field">Voce (preset)
+          <select id="optVocalPreset">
+            <option value="balanced" selected>Echilibrat</option>
+            <option value="clean">Curat (mai puțin bleed)</option>
+            <option value="full">Plin (păstrează cozile)</option>
+          </select>
+        </label>
+        <label class="field">Limba Guide
+          <select id="optLang"><option value="ro" selected>Română</option><option value="en">English</option></select>
+        </label>
+        <label class="field">Count-in (bari)
+          <input type="number" id="optCountIn" value="2" min="0" max="4">
+        </label>
+        <label class="field">Subdiviziune click
+          <select id="optSub"><option value="1" selected>Pătrimi</option><option value="2">Optimi</option><option value="4">Șaisprezecimi</option></select>
+        </label>
+        <label class="field">Transpune
+          <select id="optTranspose">
+            <option value="0" selected>Fără</option>
+            <option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option>
+            <option value="-2">-2</option><option value="-1">-1</option>
+            <option value="1">+1</option><option value="2">+2</option><option value="3">+3</option>
+            <option value="4">+4</option><option value="5">+5</option>
+          </select>
+        </label>
+        <label class="field">Format export
+          <select id="optFormat">
+            <option value="wav24" selected>WAV 24-bit</option>
+            <option value="wav16">WAV 16-bit</option>
+            <option value="flac">FLAC</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid" style="margin-top:6px">
+        <div>
+          <label class="check"><input type="checkbox" id="optLeadBgv" checked> Separă Lead / BGV</label>
+          <label class="check"><input type="checkbox" id="optDrums"> Separă toba în bucăți (lent, rar necesar)</label>
+          <label class="check"><input type="checkbox" id="optGuitarKeys" checked> Separă chitare / clape</label>
+        </div>
+        <div>
+          <label class="check"><input type="checkbox" id="optClick" checked> Click</label>
+          <label class="check"><input type="checkbox" id="optGuide" checked> Guide (voce)</label>
+          <label class="check"><input type="checkbox" id="optCombined" checked> Click + Guide împreună</label>
+        </div>
+        <div>
+          <label class="check"><input type="checkbox" id="optPad" checked> Pad ambiental în tonalitate</label>
+          <label class="check"><input type="checkbox" id="optMinusOne" checked> Minus One / Acapella</label>
+          <label class="check"><input type="checkbox" id="optNormalize"> Normalizează stem-urile</label>
+        </div>
+        <div>
+          <label class="check"><input type="checkbox" id="optGate" checked> Doar instrumentele care chiar există</label>
+          <label class="check"><input type="checkbox" id="optKeepUncertain" checked> Păstrează și cele incerte (marcate)</label>
+          <label class="check"><input type="checkbox" id="optRefine" checked> A doua trecere (taie frecvențele)</label>
+          <label class="check"><input type="checkbox" id="optRestore" checked> A treia trecere (reconstruiește găurile)</label>
+          <label class="check"><input type="checkbox" id="optBoth"> Exportă și varianta tăiată, pentru comparație</label>
+          <label class="check"><input type="checkbox" id="optMidi" checked> Transcrie notele + MIDI per instrument</label>
+          <label class="check"><input type="checkbox" id="optRepeats" checked> Împrumută din refrenele repetate</label>
+          <label class="check"><input type="checkbox" id="optResynth" checked> Reconstruiește din partitură</label>
+          <label class="check"><input type="checkbox" id="optPlay"> Cântă partea cu un sunet curat</label>
+          <label class="check"><input type="checkbox" id="optRegrid"> Pune piesa pe grilă constantă</label>
+        </div>
+        <div>
+          <label class="check"><input type="checkbox" id="optSpatial"> Separă după poziția în stereo</label>
+          <label class="check"><input type="checkbox" id="optQuality" checked> Raport de calitate pe fiecare track</label>
+          <label class="field" style="margin-top:6px">Cât de strict e filtrul
+            <input type="range" id="optStrict" min="0.7" max="1.3" step="0.05" value="1">
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <div class="row" style="margin-top:20px">
+      <button class="primary" id="btnRender">Generează track-urile</button>
+      <button class="ghost" id="btnBack">Înapoi</button>
+      <span class="meta" id="renderHint" style="color:var(--muted);font-size:13px"></span>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="card hidden" id="step-progress">
+    <h2>3. Se generează</h2>
+    <p class="sub" id="progMsg">…</p>
+    <div class="bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="log" id="progLog"></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="card hidden" id="step-done">
+    <h2>4. Gata</h2>
+    <p class="sub" id="doneSub"></p>
+    <div id="notes"></div>
+    <div id="inventory"></div>
+    <div id="stemList" style="margin-top:14px"></div>
+    <audio id="preview" controls preload="none"></audio>
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="btnDownload">Descarcă tot (.zip)</button>
+      <button id="btnNew">Piesă nouă</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const SECTION_TYPES = ["intro","verse","prechorus","chorus","bridge","inst","solo","break","outro"];
+const SECTION_RO = {intro:"Intro",verse:"Strofă",prechorus:"Pre-refren",chorus:"Refren",bridge:"Bridge",
+  inst:"Instrumental",solo:"Solo",break:"Pauză",outro:"Final"};
+const SECTION_COLOR = {intro:"#8fb9d9",verse:"#7fc4a3",prechorus:"#b9c77f",chorus:"#e0a95a",
+  bridge:"#c79ad9",inst:"#9aa8b8",solo:"#e0857a",break:"#6f7d8c",outro:"#8fa0b3"};
+
+let state = {jobId:null, analysis:null, sel:0, files:[]};
+
+const fmt = t => { t=Math.max(0,t); const m=Math.floor(t/60), s=Math.floor(t%60); return `${m}:${String(s).padStart(2,"0")}`; };
+const barLen = () => (60/(state.analysis?.bpm||120)) * (state.analysis?.beats_per_bar||4);
+
+// ---------- status ----------
+fetch("/api/status").then(r=>r.json()).then(s=>{
+  $("#deviceBadge").textContent = s.device;
+  $("#modelBadge").textContent = s.separator_installed ? "modele OK" : "⚠ audio-separator lipsă";
+  $("#guideBadge").textContent = (s.allin1 ? "structură: allin1" : "structură: built-in")
+     + " · " + (s.tts ? "voce: "+s.tts : "voce: bip-uri");
+});
+
+// ---------- upload ----------
+const drop = $("#drop"), fileInput = $("#file");
+drop.onclick = () => fileInput.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); handleFiles(e.dataTransfer.files); };
+fileInput.onchange = e => handleFiles(e.target.files);
+
+async function handleFiles(list){
+  if(!list.length) return;
+  const f = list[0];
+  if(list.length>1) log("#uploadLog", `${list.length} fișiere — se procesează primul: ${f.name}`);
+  log("#uploadLog", `Se încarcă ${f.name}…`);
+  const fd = new FormData(); fd.append("file", f);
+  const res = await fetch("/api/upload", {method:"POST", body:fd}).then(r=>r.json());
+  state.jobId = res.job_id;
+  $("#player").src = `/api/source/${state.jobId}`;
+  log("#uploadLog", "Se analizează tempo, tonalitate și structură…");
+  await fetch("/api/analyze", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({job_id: state.jobId})});
+  listen(state.jobId, async (ev) => {
+    log("#uploadLog", `${ev.message||ev.stage}`);
+    if(ev.state === "analyzed"){
+      state.analysis = await fetch(`/api/analysis/${state.jobId}`).then(r=>r.json());
+      showReview();
+      return true;
+    }
+    if(ev.state === "error"){ log("#uploadLog", "Eroare: "+ev.message); return true; }
+  });
+}
+
+function log(sel, msg){ const el=$(sel); el.textContent += (el.textContent?"\n":"") + msg; el.scrollTop = el.scrollHeight; }
+
+function listen(jobId, onEvent){
+  const es = new EventSource(`/api/progress/${jobId}`);
+  es.onmessage = async e => { const done = await onEvent(JSON.parse(e.data)); if(done) es.close(); };
+  es.onerror = () => es.close();
+}
+
+// ---------- review ----------
+function showReview(){
+  $("#step-upload").classList.add("hidden");
+  $("#step-review").classList.remove("hidden");
+  const a = state.analysis;
+  $("#stats").innerHTML = [
+    ["Tonalitate", a.key_display + (a.camelot?` · ${a.camelot}`:"")],
+    ["Tempo", a.bpm.toFixed(1)+" BPM"],
+    ["Metru", a.beats_per_bar+"/4"],
+    ["Durată", fmt(a.duration)],
+  ].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+  if(state.difficulty){
+    const d = state.difficulty;
+    const cls = (d.verdict === "easy" || d.verdict === "fair") ? "ok" : "";
+    $("#stats").insertAdjacentHTML("afterend",
+      `<div class="note ${cls}" id="forecast"><b>${d.verdict}</b> — ${d.summary}
+       <span style="color:var(--muted)">${d.reasons[0]}</span></div>`);
+  }
+  $("#tick1").textContent = fmt(a.duration/2);
+  $("#tick2").textContent = fmt(a.duration);
+  $("#optBpm").value = a.bpm.toFixed(1);
+  state.detectedBpm = a.bpm;
+  updateBpmHint();
+  renderTimeline(); renderTable();
+}
+
+function tempoMode(){ return document.querySelector('input[name=tempoMode]:checked').value; }
+function updateBpmHint(){
+  const fixed = tempoMode() === "fixed";
+  $("#optBpm").disabled = !fixed;
+  $("#bpmHint").textContent = fixed
+    ? "Grilă constantă — pentru cântat pe click"
+    : `Detectat ${state.detectedBpm?.toFixed(1)} BPM, cu driftul înregistrării`;
+}
+document.querySelectorAll('input[name=tempoMode]').forEach(r => r.onchange = () => {
+  updateBpmHint();
+  if(tempoMode()==="fixed") applyBpm(+$("#optBpm").value);
+  else { state.analysis.bpm = state.detectedBpm; renderTable(); }
+});
+function applyBpm(bpm){
+  if(!bpm || bpm < 20) return;
+  state.analysis.bpm = bpm;
+  $("#optBpm").value = bpm.toFixed(1);
+  renderTable();
+}
+$("#optBpm").onchange = e => applyBpm(+e.target.value);
+$("#btnHalf").onclick = () => { document.querySelector('input[value=fixed]').checked = true; updateBpmHint(); applyBpm(+$("#optBpm").value/2); };
+$("#btnDouble").onclick = () => { document.querySelector('input[value=fixed]').checked = true; updateBpmHint(); applyBpm(+$("#optBpm").value*2); };
+$("#btnResetBpm").onclick = () => { document.querySelector('input[value=detected]').checked = true; updateBpmHint(); applyBpm(state.detectedBpm); };
+
+function renderTimeline(){
+  const tl = $("#timeline"), a = state.analysis;
+  [...tl.querySelectorAll(".seg")].forEach(e=>e.remove());
+  a.sections.forEach((s,i)=>{
+    const d = document.createElement("div");
+    d.className = "seg" + (i===state.sel?" sel":"");
+    d.style.left = (s.start/a.duration*100)+"%";
+    d.style.width = ((s.end-s.start)/a.duration*100)+"%";
+    d.style.background = SECTION_COLOR[s.label] || "#8a93a0";
+    d.textContent = (SECTION_RO[s.label]||s.label) + (s.index>1?" "+s.index:"");
+    d.title = `${fmt(s.start)} → ${fmt(s.end)}`;
+    d.onclick = e => { e.stopPropagation(); select(i); };
+    tl.appendChild(d);
+  });
+}
+
+function renderTable(){
+  const tb = $("#sections tbody"), a = state.analysis;
+  tb.innerHTML = "";
+  a.sections.forEach((s,i)=>{
+    const tr = document.createElement("tr");
+    if(i===state.sel) tr.className = "sel";
+    const bars = Math.max(1, Math.round((s.end-s.start)/barLen()));
+    tr.innerHTML = `<td class="num">${i+1}</td>
+      <td><select data-i="${i}" class="lbl">${SECTION_TYPES.map(t=>
+        `<option value="${t}" ${t===s.label?"selected":""}>${SECTION_RO[t]}</option>`).join("")}</select>
+        <input type="number" class="idx" data-i="${i}" value="${s.index||1}" min="0" max="12" style="width:58px;margin-left:6px">
+      </td>
+      <td class="num">${fmt(s.start)}</td><td class="num">${fmt(s.end-s.start)}</td><td class="num">${bars}</td>`;
+    tr.onclick = e => { if(e.target.tagName!=="SELECT" && e.target.tagName!=="INPUT") select(i); };
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("select.lbl").forEach(sel=>{
+    sel.onchange = e => { state.analysis.sections[+e.target.dataset.i].label = e.target.value; reindex(); };
+  });
+  tb.querySelectorAll("input.idx").forEach(inp=>{
+    inp.onchange = e => { state.analysis.sections[+e.target.dataset.i].index = +e.target.value; renderTimeline(); };
+  });
+}
+
+function reindex(){
+  const seen = {};
+  state.analysis.sections.forEach(s=>{
+    if(["verse","chorus","bridge"].includes(s.label)){ seen[s.label]=(seen[s.label]||0)+1; s.index=seen[s.label]; }
+    else s.index = 0;
+  });
+  renderTimeline(); renderTable();
+}
+
+function select(i){ state.sel = Math.max(0, Math.min(i, state.analysis.sections.length-1)); renderTimeline(); renderTable(); }
+
+const player = $("#player");
+player.ontimeupdate = () => {
+  if(!state.analysis) return;
+  $("#playhead").style.left = (player.currentTime/state.analysis.duration*100)+"%";
+};
+$("#timeline").onclick = e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  player.currentTime = (e.clientX-r.left)/r.width * state.analysis.duration;
+};
+
+$("#btnPlaySel").onclick = () => { player.currentTime = state.analysis.sections[state.sel].start; player.play(); };
+$("#btnSplit").onclick = () => {
+  const t = player.currentTime, secs = state.analysis.sections;
+  const i = secs.findIndex(s => t > s.start+1 && t < s.end-1);
+  if(i<0) return;
+  const s = secs[i];
+  secs.splice(i+1, 0, {start:t, end:s.end, label:s.label, index:s.index});
+  s.end = t; reindex(); select(i+1);
+};
+$("#btnDelete").onclick = () => {
+  const secs = state.analysis.sections;
+  if(secs.length<2) return;
+  const i = state.sel, s = secs[i];
+  if(i>0) secs[i-1].end = s.end; else secs[1].start = s.start;
+  secs.splice(i,1); reindex(); select(Math.max(0,i-1));
+};
+const nudge = d => () => {
+  const secs = state.analysis.sections, i = state.sel;
+  if(i===0) return;
+  const t = Math.max(secs[i-1].start+1, Math.min(secs[i].end-1, secs[i].start + d*barLen()));
+  secs[i].start = t; secs[i-1].end = t; renderTimeline(); renderTable();
+};
+$("#btnSnapBack").onclick = nudge(-1);
+$("#btnSnapFwd").onclick = nudge(1);
+$("#btnBack").onclick = () => { $("#step-review").classList.add("hidden"); $("#step-upload").classList.remove("hidden"); };
+
+// ---------- render ----------
+$("#btnRender").onclick = async () => {
+  const options = {
+    quality: $("#optQuality").value,
+    vocal_preset: $("#optVocalPreset").value,
+    guide_language: $("#optLang").value,
+    click_count_in_bars: +$("#optCountIn").value,
+    click_subdivision: +$("#optSub").value,
+    output_format: $("#optFormat").value,
+    split_lead_bgv: $("#optLeadBgv").checked,
+    split_drums: $("#optDrums").checked,
+    split_guitar_keys: $("#optGuitarKeys").checked,
+    make_click: $("#optClick").checked,
+    make_guide: $("#optGuide").checked,
+    make_click_guide_combined: $("#optCombined").checked,
+    make_ambient_pad: $("#optPad").checked,
+    make_minus_one: $("#optMinusOne").checked,
+    make_acapella: $("#optMinusOne").checked,
+    normalize_stems: $("#optNormalize").checked,
+    gate_instruments: $("#optGate").checked,
+    keep_uncertain: $("#optKeepUncertain").checked,
+    gate_strictness: +$("#optStrict").value,
+    refine: $("#optRefine").checked,
+    restore: $("#optRestore").checked,
+    restore_chain: $("#optBoth").checked ? "both" : "restored",
+    transcribe_midi: $("#optMidi").checked,
+    note_informed_restore: $("#optMidi").checked,
+    borrow_repeats: $("#optRepeats").checked,
+    resynthesize: $("#optResynth").checked,
+    render_parts: $("#optPlay").checked,
+    regrid: $("#optRegrid").checked,
+    transpose_semitones: +$("#optTranspose").value,
+    spatial_split: $("#optSpatial").checked,
+    quality_report: $("#optQuality").checked,
+    tempo_mode: tempoMode(),
+    fixed_bpm: tempoMode()==="fixed" ? +$("#optBpm").value : null,
+  };
+  $("#step-review").classList.add("hidden");
+  $("#step-progress").classList.remove("hidden");
+  $("#progLog").textContent = "";
+  await fetch("/api/render", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({job_id: state.jobId, sections: state.analysis.sections,
+      bpm: state.analysis.bpm, key: state.analysis.key, mode: state.analysis.mode, options})});
+  listen(state.jobId, async ev => {
+    $("#progBar").style.width = Math.round((ev.fraction||0)*100)+"%";
+    $("#progMsg").textContent = ev.message || ev.stage;
+    if(ev.message) log("#progLog", `[${ev.stage}] ${ev.message}`);
+    if(ev.state==="done"){ showDone(); return true; }
+    if(ev.state==="error"){ log("#progLog","EROARE: "+ev.message); return true; }
+  });
+};
+
+async function showDone(){
+  const r = await fetch(`/api/result/${state.jobId}`).then(x=>x.json());
+  state.files = r.files;
+  $("#step-progress").classList.add("hidden");
+  $("#step-done").classList.remove("hidden");
+  $("#doneSub").textContent = `${r.files.length} track-uri în ${r.folder_name} · ${r.seconds}s`;
+
+  let notes = "";
+  if(r.metrics && r.metrics["Recombined vs original"])
+    notes += `<div class="note ok"><b>Verificare:</b> suma stem-urilor față de original — ${r.metrics["Recombined vs original"]}. Nu s-a pierdut nimic.</div>`;
+  (r.warnings||[]).forEach(w => notes += `<div class="note">${w}</div>`);
+  $("#notes").innerHTML = notes;
+
+  const inv = r.inventory || {};
+  const absent = Object.values(inv).filter(v => v.decision === "absent");
+  const unsure = Object.values(inv).filter(v => v.decision === "uncertain");
+  let invHtml = "";
+  if(absent.length) invHtml += `<div class="note"><b>Nu există în piesă:</b> ${
+    absent.map(v=>`${v.label} <span style="color:var(--muted)">(${v.reasons[0]})</span>`).join(" · ")
+  }<br><span style="color:var(--muted);font-size:12.5px">Nu s-a pierdut nimic — sunetul a rămas în celelalte track-uri.</span></div>`;
+  if(unsure.length) invHtml += `<div class="note"><b>Incerte — ascultă-le înainte să le folosești:</b> ${
+    unsure.map(v=>`${v.label} (${Math.round(v.confidence*100)}%)`).join(" · ")
+  }</div>`;
+
+  const rst = Object.values(r.restore || {}).filter(v => v.bins_restored > 0);
+  if(rst.length){
+    const fixed = rst.reduce((s,v)=>s+v.bins_restored, 0);
+    const left  = rst.reduce((s,v)=>s+v.bins_refused, 0);
+    invHtml += `<div class="note ok"><b>Găuri reconstruite:</b> ${fixed.toLocaleString()} bin-uri refăcute, ${left.toLocaleString()} lăsate în pace
+      <span style="color:var(--muted)">(n-a avut din ce interpola)</span><br>
+      <span style="color:var(--muted);font-size:12.5px">${
+        rst.map(v=>`${v.label} ${Math.round(v.share_restored*100)}%`).join(" · ")
+      }</span></div>`;
+  }
+  $("#inventory").innerHTML = invHtml;
+
+  const q = r.quality || {};
+  const VERDICT = {good:"curat", usable:"utilizabil", rough:"aspru"};
+  const VCOLOR = {good:"var(--ok)", usable:"var(--warn)", rough:"var(--err)"};
+  $("#stemList").innerHTML = r.files.map(f=>{
+    const qq = q[f.key];
+    const inf = inv[f.key];
+    const tag = qq ? `<span style="color:${VCOLOR[qq.verdict]};font-size:12.5px">${VERDICT[qq.verdict]}</span>` : "";
+    const detail = qq && qq.notes[0] !== "clean" ? `<span class="meta"> · ${qq.notes[0]}</span>` : "";
+    const flag = inf && inf.decision==="uncertain" ? ` <span style="color:var(--warn)">incert</span>` : "";
+    return `<div class="stemrow">
+      <div class="swatch" style="background:${SECTION_COLOR.chorus}"></div>
+      <div class="name">${f.label}${flag}</div>
+      <div class="meta">${tag}${detail}</div>
+      <div class="meta">${f.peak_db.toFixed(1)} dBFS</div>
+      <button class="small" data-name="${encodeURIComponent(f.name)}">▶</button>
+    </div>`;
+  }).join("");
+  $("#stemList").querySelectorAll("button").forEach(b=>{
+    b.onclick = () => { const p=$("#preview"); p.src = `/api/audio/${state.jobId}/${b.dataset.name}`; p.play(); };
+  });
+}
+
+$("#btnDownload").onclick = () => { window.location = `/api/download/${state.jobId}`; };
+$("#btnNew").onclick = () => location.reload();
+</script>
+</body>
+</html>

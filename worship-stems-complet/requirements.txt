@@ -1,0 +1,43 @@
+# Core audio + analysis
+numpy>=2.0
+scipy>=1.13
+soundfile>=0.12
+librosa>=0.10
+scikit-learn>=1.3
+# librosa's fallback decoder; audio-separator imports it indirectly.
+# 3.1 is the floor on purpose: audioread's rawread backend imports aifc,
+# sunau and audioop, which PEP 594 removed from the stdlib in Python 3.13.
+# Only 3.1.0 declares the standard-aifc / standard-sunau / audioop-lts
+# backports for 3.13+. 3.0.x still says Requires-Python >=3.6, so pip
+# installs it happily on 3.13 and it then blows up at the first decode.
+audioread>=3.1
+pydub>=0.25
+
+# Local web UI
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pydantic>=2.0
+
+# Separation models (RoFormer, Demucs, MDX23C) - CPU/MPS build
+audio-separator[cpu]>=0.47
+
+# Note transcription -> MIDI, and the note-informed repair.
+# NOTE: install basic-pitch with --no-deps. Its dependency list pulls in
+# TensorFlow, which pins numpy below 2 and collides with audio-separator.
+# The bundled ONNX model needs none of it: onnxruntime is enough.
+#
+# But --no-deps also drops two that basic_pitch.inference genuinely imports:
+# resampy (via basic_pitch.note_creation) and mir-eval. Without them the
+# package imports fine and the first transcription call raises
+# ModuleNotFoundError, so they are listed here instead.
+onnxruntime>=1.17
+pretty_midi>=0.2.10
+mido>=1.3
+resampy>=0.2.2,<0.4.3
+mir-eval>=0.6
+#   pip install --no-deps basic-pitch
+
+# Optional, installed by ./install_macos.sh --with-structure
+#   natten
+#   allin1        # much better verse/chorus detection for the Guide track
