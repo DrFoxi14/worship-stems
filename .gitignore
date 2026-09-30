@@ -1,0 +1,27 @@
+# Local Python environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# Generated audio and session files
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.aiff
+*.aif
+*.RPP
+MIDI/
+outputs/
+runs/
+
+# OS / editor files
+.DS_Store
+.vscode/
+.idea/
